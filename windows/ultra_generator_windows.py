@@ -60,21 +60,33 @@ def generate_address_fast(private_key_bytes: bytes) -> Tuple[str, str]:
     return private_key_bytes.hex(), address
 
 
-def check_pattern_combined(address: str, prefix: str, suffix: str, case_sensitive: bool) -> bool:
-    """检查前缀+后缀同时匹配"""
+def check_pattern_combined(address: str, prefix: str, suffix: str, contains: str, case_sensitive: bool) -> bool:
+    """检查前缀+后缀+包含的组合匹配"""
     addr = address[2:]
     
     if not case_sensitive:
         addr = addr.lower()
-        prefix = prefix.lower()
-        suffix = suffix.lower()
+        if prefix:
+            prefix = prefix.lower()
+        if suffix:
+            suffix = suffix.lower()
+        if contains:
+            contains = contains.lower()
     
-    return addr.startswith(prefix) and addr.endswith(suffix)
+    # 检查所有条件
+    if prefix and not addr.startswith(prefix):
+        return False
+    if suffix and not addr.endswith(suffix):
+        return False
+    if contains and contains not in addr:
+        return False
+    
+    return True
 
 
-def worker_ultra(prefix: str, suffix: str, case_sensitive: bool,
+def worker_ultra(prefix: str, suffix: str, contains: str, case_sensitive: bool,
                 result_queue: mp.Queue, counter: mp.Value, stop_event: mp.Event, stats_queue: mp.Queue):
-    """超级靓号工作进程"""
+    """超级靓号工作进程 - 支持前缀+后缀+包含组合"""
     local_count = 0
     last_update = time.time()
     
@@ -99,8 +111,8 @@ def worker_ultra(prefix: str, suffix: str, case_sensitive: bool,
                         stats_queue.put(('speed', local_speed))
                 last_update = current_time
             
-            # 检查匹配
-            if check_pattern_combined(address, prefix, suffix, case_sensitive):
+            # 检查匹配（支持前缀+后缀+包含的任意组合）
+            if check_pattern_combined(address, prefix, suffix, contains, case_sensitive):
                 result_queue.put((pk_hex, address, local_count))
                 
         except Exception:
@@ -199,26 +211,35 @@ def main():
     print(f"{Colors.CYAN}新增：概率显示 | 详细统计 | 运气评估 | 彩色输出{Colors.RESET}")
     print(f"{Colors.CYAN}{'=' * 70}{Colors.RESET}\n")
     
-    # 获取配置
-    print(f"{Colors.BOLD}【配置向导】{Colors.RESET}\n")
+    # 灵活的配置方式
+    print(f"{Colors.BOLD}【灵活配置】{Colors.RESET}")
+    print(f"{Colors.CYAN}提示：不需要的条件直接按回车跳过{Colors.RESET}\n")
     
-    prefix = input("输入前缀（不含0x，如: 1780）: ").strip()
+    # 1. 询问前缀
+    prefix = input(f"{Colors.YELLOW}前缀（如: 1780，不需要按回车跳过）: {Colors.RESET}").strip()
     if prefix.startswith("0x") or prefix.startswith("0X"):
         prefix = prefix[2:]
     
-    suffix = input("输入后缀（如: 3CffbD，无则回车）: ").strip()
+    # 2. 询问后缀
+    suffix = input(f"{Colors.YELLOW}后缀（如: 3CffbD，不需要按回车跳过）: {Colors.RESET}").strip()
     
-    if not prefix and not suffix:
-        print(f"\n{Colors.RED}❌ 错误：前缀和后缀不能都为空{Colors.RESET}")
+    # 3. 询问包含
+    contains = input(f"{Colors.YELLOW}包含（如: 888，不需要按回车跳过）: {Colors.RESET}").strip()
+    
+    # 检查至少有一个条件
+    if not prefix and not suffix and not contains:
+        print(f"\n{Colors.RED}❌ 错误：至少需要一个匹配条件（前缀/后缀/包含）{Colors.RESET}")
         pause()
         return
     
-    # 验证
+    # 验证十六进制
     try:
         if prefix:
             int(prefix, 16)
         if suffix:
             int(suffix, 16)
+        if contains:
+            int(contains, 16)
     except ValueError:
         print(f"\n{Colors.RED}❌ 错误：必须是有效的十六进制字符（0-9, a-f）{Colors.RESET}")
         pause()
@@ -245,21 +266,51 @@ def main():
     print(f"{Colors.BOLD}【配置确认】{Colors.RESET}")
     print(f"  前缀: {Colors.YELLOW}{prefix if prefix else '(无)'}{Colors.RESET}")
     print(f"  后缀: {Colors.YELLOW}{suffix if suffix else '(无)'}{Colors.RESET}")
-    print(f"  示例: {Colors.GREEN}0x{prefix}...{suffix}{Colors.RESET}")
+    print(f"  包含: {Colors.YELLOW}{contains if contains else '(无)'}{Colors.RESET}")
+    
+    # 生成示例地址
+    example_parts = []
+    if prefix:
+        example_parts.append(prefix)
+    example_parts.append("...")
+    if contains:
+        example_parts.append(f"{contains}...")
+    if suffix:
+        example_parts.append(suffix)
+    example_addr = "0x" + "".join(example_parts)
+    print(f"  示例: {Colors.GREEN}{example_addr}{Colors.RESET}")
+    
     print(f"  区分大小写: {'是' if case_sensitive else '否'}")
     print(f"  生成数量: {num_results}")
     print(f"  进程数: {num_processes}")
     print()
     
-    # 计算难度
+    # 计算难度（前缀+后缀的组合难度，包含模式单独计算）
     prefix_len = len(prefix) if prefix else 0
     suffix_len = len(suffix) if suffix else 0
-    total_len = prefix_len + suffix_len
-    difficulty = 16 ** total_len
+    contains_len = len(contains) if contains else 0
+    
+    # 前缀+后缀是确定位置，难度累加
+    fixed_len = prefix_len + suffix_len
+    if fixed_len > 0:
+        difficulty = 16 ** fixed_len
+    else:
+        difficulty = 1
+    
+    # 包含模式是不确定位置，难度按平均估算（地址40位，滑动窗口）
+    if contains_len > 0:
+        # 包含模式的难度约为 16^n / (40 - n + 1)
+        contains_difficulty = 16 ** contains_len / max(1, 40 - contains_len)
+        if fixed_len > 0:
+            # 如果有固定位置，难度相乘
+            difficulty *= contains_difficulty
+        else:
+            difficulty = contains_difficulty
     
     print(f"{Colors.BOLD}【难度评估】{Colors.RESET}")
-    print(f"  前缀: {prefix_len}位 | 后缀: {suffix_len}位 | 总难度: {Colors.BOLD}{total_len}位{Colors.RESET}")
-    print(f"  预估尝试: {Colors.YELLOW}{format_large_number(difficulty)}{Colors.RESET} 次")
+    print(f"  前缀: {prefix_len}位 | 后缀: {suffix_len}位 | 包含: {contains_len}位")
+    print(f"  总难度: {Colors.BOLD}{prefix_len + suffix_len + contains_len}位{Colors.RESET}")
+    print(f"  预估尝试: {Colors.YELLOW}{format_large_number(int(difficulty))}{Colors.RESET} 次")
     
     estimated_speed = num_processes * 15000
     estimated_time = difficulty / estimated_speed
@@ -267,7 +318,8 @@ def main():
     print(f"  预估时间: {Colors.CYAN}{format_time(estimated_time)}{Colors.RESET}")
     print()
     
-    if total_len >= 10:
+    total_difficulty_len = prefix_len + suffix_len + contains_len
+    if total_difficulty_len >= 10:
         print(f"{Colors.RED}⚠️  警告：这是一个超级靓号！预计需要很长时间{Colors.RESET}")
         print()
     
@@ -293,7 +345,7 @@ def main():
     processes = []
     for _ in range(num_processes):
         p = mp.Process(target=worker_ultra,
-                      args=(prefix, suffix, case_sensitive, result_queue, counter, stop_event, stats_queue))
+                      args=(prefix, suffix, contains, case_sensitive, result_queue, counter, stop_event, stats_queue))
         p.start()
         processes.append(p)
     
@@ -325,7 +377,7 @@ def main():
                 print(f"   耗时: {Colors.PURPLE}{format_time(elapsed)}{Colors.RESET}")
                 print(f"{Colors.GREEN}{'=' * 70}{Colors.RESET}\n")
                 
-                save_result(pk_hex, address, prefix, suffix, case_sensitive)
+                save_result(pk_hex, address, prefix, suffix, contains, case_sensitive)
             
             # 处理统计数据
             while not stats_queue.empty():
@@ -446,7 +498,7 @@ def main():
     pause()
 
 
-def save_result(pk_hex: str, address: str, prefix: str, suffix: str, case_sensitive: bool):
+def save_result(pk_hex: str, address: str, prefix: str, suffix: str, contains: str, case_sensitive: bool):
     """保存结果"""
     output_file = "ultra_vanity_wallets.txt"
     
@@ -460,6 +512,7 @@ def save_result(pk_hex: str, address: str, prefix: str, suffix: str, case_sensit
         f.write(f"生成时间: {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"前缀: {prefix if prefix else '(无)'}\n")
         f.write(f"后缀: {suffix if suffix else '(无)'}\n")
+        f.write(f"包含: {contains if contains else '(无)'}\n")
         f.write(f"区分大小写: {'是' if case_sensitive else '否'}\n")
         f.write(f"{'=' * 70}\n\n")
         f.write(f"地址: {address}\n")
