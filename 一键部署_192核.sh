@@ -1,9 +1,9 @@
 #!/bin/bash
 # BSC靓号生成器 - 192核服务器一键部署
 
-SERVER_IP="8.217.67.89"
+SERVER_IP="你的服务器IP"
 SERVER_USER="root"
-SERVER_PASSWORD="Fk2322085"
+SERVER_PASSWORD="你的密码"
 
 echo "============================================================"
 echo "  BSC靓号生成器 - 192核超级服务器一键部署"
@@ -32,8 +32,8 @@ if ! command -v sshpass &> /dev/null; then
         echo "或者手动部署："
         echo "----------------------------------------"
         echo "cd /Users/xiaowu/tst"
-        echo "scp *.py requirements.txt auto_deploy.sh root@8.217.67.89:~/"
-        echo "ssh root@8.217.67.89"
+        echo "scp *.py requirements.txt auto_deploy.sh root@你的服务器IP:~/"
+        echo "ssh root@你的服务器IP"
         echo "chmod +x auto_deploy.sh && ./auto_deploy.sh"
         echo "----------------------------------------"
         exit 1
