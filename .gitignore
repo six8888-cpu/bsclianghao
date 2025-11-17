@@ -32,6 +32,12 @@ wheels/
 super_vanity_wallets.txt
 ultra_vanity_wallets.txt
 
+# 服务器配置文件（包含密码）
+server_config.sh
+*_config.sh
+*.secret
+*.password
+
 # IDE
 .vscode/
 .idea/
