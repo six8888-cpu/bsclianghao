@@ -26,6 +26,7 @@ wheels/
 # PyInstaller
 *.manifest
 *.spec
+*.exe
 
 # 生成的钱包文件（敏感数据）
 *_vanity_wallets.txt
