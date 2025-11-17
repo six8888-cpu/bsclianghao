@@ -1,23 +1,38 @@
 #!/bin/bash
-# BSC靓号生成器快速启动脚本
 
-echo "=================================="
-echo "   BSC靓号生成器"
-echo "=================================="
+# BSC靓号生成器 - 快速启动脚本
+
+echo "========================================"
+echo "  BSC靓号生成器"
+echo "========================================"
 echo ""
 echo "请选择版本："
-echo "  1. 极速版 (前缀/后缀/包含，单一匹配)"
-echo "  2. 超级版 (前缀+后缀，组合匹配)"
 echo ""
-read -p "请选择 (1/2): " choice
+echo "  [1] V2增强版 (推荐)"
+echo "      - 前缀+后缀+包含灵活组合"
+echo "      - 实时概率、彩色界面"
+echo "      - 运气评估、详细统计"
+echo ""
+echo "  [2] 简化版"
+echo "      - 单一模式匹配"
+echo "      - 适合简单需求"
+echo ""
+read -p "请输入选择 [1/2]: " choice
 
-if [ "$choice" = "2" ]; then
-    echo ""
-    echo "启动超级版..."
-    python3 ultra_generator.py
-else
-    echo ""
-    echo "启动极速版..."
-    python3 fast_generator.py
-fi
-
+case $choice in
+    1)
+        echo ""
+        echo "启动V2增强版..."
+        python3 ultra_generator_v2.py
+        ;;
+    2)
+        echo ""
+        echo "启动简化版..."
+        python3 fast_generator.py
+        ;;
+    *)
+        echo ""
+        echo "无效选择，启动V2增强版..."
+        python3 ultra_generator_v2.py
+        ;;
+esac
