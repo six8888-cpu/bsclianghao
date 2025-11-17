@@ -7,15 +7,15 @@ echo "========================================"
 echo ""
 
 # 服务器信息
-SERVER_192="YOUR_SERVER_IP<=="
-SERVER_8="YOUR_SERVER_IP<=="
+SERVER_192="你的服务器IP"
+SERVER_8="你的服务器IP_2"
 USER="root"
-PASS_192="YOUR_PASSWORD<=="
-PASS_8="YOUR_PASSWORD<=="
+PASS_192="你的密码"
+PASS_8="你的密码"
 
 echo "选择目标服务器："
-echo "  1. 192核服务器 (YOUR_SERVER_IP<==)"
-echo "  2. 8核服务器 (YOUR_SERVER_IP<==)"
+echo "  1. 192核服务器 (你的服务器IP)"
+echo "  2. 8核服务器 (你的服务器IP_2)"
 echo ""
 
 read -p "选择 (1/2): " choice
