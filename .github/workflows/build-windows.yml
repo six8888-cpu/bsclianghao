@@ -27,7 +27,7 @@ jobs:
     - name: 打包EXE
       run: |
         cd windows
-        pyinstaller --onefile --name=BSC-Vanity-Generator --console --clean --noconfirm ultra_generator_windows.py
+        pyinstaller --onefile --name=BSC-Vanity-Generator --console --clean --noconfirm --hidden-import=eth_keys --hidden-import=eth_utils --hidden-import=Crypto --hidden-import=Crypto.Hash --hidden-import=Crypto.Hash.keccak ultra_generator_windows.py
     
     - name: 上传EXE
       uses: actions/upload-artifact@v4
