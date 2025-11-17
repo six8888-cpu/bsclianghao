@@ -51,7 +51,7 @@ echo ✓ 清理完成
 echo.
 
 echo 【步骤5/5】开始打包（需要几分钟）...
-pyinstaller --onefile --name=BSC靓号生成器 --console --clean --noconfirm ultra_generator_windows.py
+pyinstaller --onefile --name=BSC-Vanity-Generator --console --clean --noconfirm --hidden-import=eth_keys --hidden-import=eth_utils --hidden-import=Crypto --hidden-import=Crypto.Hash --hidden-import=Crypto.Hash.keccak ultra_generator_windows.py
 if errorlevel 1 (
     echo ✗ 打包失败
     pause

@@ -53,11 +53,16 @@ def main():
     cmd = [
         'pyinstaller',
         '--onefile',                          # 打包成单个文件
-        '--name=BSC靓号生成器',                 # 程序名称
+        '--name=BSC-Vanity-Generator',        # 程序名称
         '--icon=NONE',                        # 图标（如果有的话）
         '--console',                          # 保持控制台窗口
         '--clean',                            # 清理临时文件
         '--noconfirm',                        # 不询问覆盖
+        '--hidden-import=eth_keys',          # 隐藏导入
+        '--hidden-import=eth_utils',
+        '--hidden-import=Crypto',
+        '--hidden-import=Crypto.Hash',
+        '--hidden-import=Crypto.Hash.keccak',
         'ultra_generator_windows.py'
     ]
     
@@ -73,7 +78,7 @@ def main():
     
     # 验证
     print("【步骤4/4】验证打包结果...")
-    exe_path = os.path.join('dist', 'BSC靓号生成器.exe')
+    exe_path = os.path.join('dist', 'BSC-Vanity-Generator.exe')
     if os.path.exists(exe_path):
         file_size = os.path.getsize(exe_path) / (1024 * 1024)
         print(f"✓ EXE文件已生成")
@@ -90,10 +95,10 @@ def main():
     print("=" * 70)
     print()
     print("生成的文件：")
-    print(f"  📁 dist/BSC靓号生成器.exe  ({file_size:.2f} MB)")
+    print(f"  📁 dist/BSC-Vanity-Generator.exe  ({file_size:.2f} MB)")
     print()
     print("下一步：")
-    print("  1. 将 dist/BSC靓号生成器.exe 复制到Windows电脑")
+    print("  1. 将 dist/BSC-Vanity-Generator.exe 复制到Windows电脑")
     print("  2. 双击运行即可使用")
     print("  3. 无需安装Python环境")
     print()
