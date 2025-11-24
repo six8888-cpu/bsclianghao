@@ -74,15 +74,25 @@ if ! command -v screen &> /dev/null; then
     echo "screen未安装，开始安装..."
     case $OS in
         ubuntu|debian)
-            sudo apt install -y screen
+            sudo apt install -y screen 2>/dev/null || echo "⚠ screen安装失败，可使用nohup替代"
             ;;
         centos|rhel)
-            sudo yum install -y screen
+            # CentOS需要先安装EPEL
+            echo "尝试安装EPEL仓库..."
+            sudo yum install -y epel-release 2>/dev/null || true
+            sudo yum install -y screen 2>/dev/null || echo "⚠ screen安装失败，可使用nohup替代"
             ;;
         *)
-            echo "跳过screen安装"
+            echo "⚠ 跳过screen安装"
             ;;
     esac
+    
+    # 检查是否安装成功
+    if command -v screen &> /dev/null; then
+        echo "✓ screen已安装"
+    else
+        echo "✓ screen未安装（不影响使用，可用nohup后台运行）"
+    fi
 else
     echo "✓ screen已安装"
 fi
@@ -115,20 +125,24 @@ echo "========================================"
 echo ""
 echo "🚀 使用方法："
 echo ""
-echo "1. 直接运行（前台）："
+echo "方法1：直接运行（前台，可看实时进度）"
 echo "   python3 ultra_generator_v2.py"
 echo ""
-echo "2. 后台运行（推荐）："
-echo "   screen -S bsc"
-echo "   python3 ultra_generator_v2.py"
-echo "   # 按 Ctrl+A 然后 D 退出（程序继续运行）"
+echo "方法2：后台运行 - 使用screen（推荐）"
+if command -v screen &> /dev/null; then
+    echo "   screen -S bsc"
+    echo "   python3 ultra_generator_v2.py"
+    echo "   # 按 Ctrl+A 然后 D 退出（程序继续运行）"
+    echo "   # 恢复会话: screen -r bsc"
+    echo "   # 停止程序: screen -r bsc 然后按 Ctrl+C"
+else
+    echo "   ⚠ screen未安装，请使用方法3"
+fi
 echo ""
-echo "3. 恢复后台会话："
-echo "   screen -r bsc"
-echo ""
-echo "4. 停止程序："
-echo "   screen -r bsc  # 恢复会话"
-echo "   # 然后按 Ctrl+C"
+echo "方法3：后台运行 - 使用nohup"
+echo "   nohup python3 ultra_generator_v2.py > output.log 2>&1 &"
+echo "   # 查看日志: tail -f output.log"
+echo "   # 停止程序: pkill -f ultra_generator"
 echo ""
 echo "📊 查看CPU核心数："
 echo "   nproc"
